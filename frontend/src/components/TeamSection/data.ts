@@ -45,7 +45,7 @@ export const speakers: SpeakerData[] = [
         title: 'Senior Software Engineer @ Lyft',
         biography: 'Team member biography',
         photo: amin_bashiri,
-        linkedinUrl: "https://www.linkedin.com/in/ma-shamshiri/",
+        linkedinUrl: "https://www.linkedin.com/in/aminbashiri/",
         instagramUrl: "https://www.instagram.com/",
         tedUrl: "https://www.ted.com/"
     },
