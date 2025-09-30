@@ -16,7 +16,7 @@ from google.adk.runners import Runner
 from google.adk.events import Event
 from pydantic import BaseModel, Field
 from google.adk.events import Event, EventActions
-from chatter_box.utils import check_environment_variables
+from utils import check_environment_variables
 
 # --- Load environment and constants ---
 load_dotenv()
@@ -28,7 +28,7 @@ USER_ID = "12345"
 SESSION_ID = "123344"
 GEMINI_2_FLASH = "gemini-2.0-flash"
 MAX_MESSAGES = 10
-MAX_MESSAGES_BEFORE_SUMMARY = 3
+MAX_MESSAGES_BEFORE_SUMMARY = 1
 
 # --- Configure Logging ---
 logging.basicConfig(level=logging.INFO)
@@ -48,6 +48,8 @@ class StoryFlowAgent(BaseAgent):
     # --- Field Declarations for Pydantic ---
     # Declare the agents passed during initialization as class attributes with type hints
     summarizer: LlmAgent
+    fact_checker: LlmAgent
+    decider: LlmAgent
 
     # model_config allows setting Pydantic configurations if needed, e.g., arbitrary_types_allowed
     model_config = {"arbitrary_types_allowed": True}
@@ -56,6 +58,8 @@ class StoryFlowAgent(BaseAgent):
         self,
         name: str,
         summarizer: LlmAgent,
+        fact_checker: LlmAgent,
+        decider: LlmAgent,
     ):
         """
         Initializes the StoryFlowAgent.
@@ -72,12 +76,16 @@ class StoryFlowAgent(BaseAgent):
         # Define the sub_agents list for the framework
         sub_agents_list = [
             summarizer,
+            fact_checker,
+            decider,
         ]
 
         # Pydantic will validate and assign them based on the class annotations.
         super().__init__(
             name=name,
             summarizer=summarizer,
+            fact_checker=fact_checker,
+            decider=decider,
             sub_agents=sub_agents_list,  # Pass the sub_agents list directly
         )
 
@@ -115,6 +123,49 @@ class StoryFlowAgent(BaseAgent):
 
         logger.info(f"[{self.name}] Workflow finished.")
 
+        decider
+        async for event in self.decider.run_async(ctx):
+
+            yield event
+            # Persist final fact check into session state
+            if event.is_final_response() and event.content and event.content.parts:
+                final_text = event.content.parts[0].text
+                state_delta = {"decider": final_text, "messages_since_last_fact_check": 0}
+                update_event = Event(
+                    invocation_id=uuid.uuid4().hex,
+                    author=self.name,
+                    timestamp=time.time(),
+                    actions=EventActions(state_delta=state_delta),
+                )
+                yield update_event
+                logger.info(
+                    f"[{self.name}] Updated session state 'decider' and reset counter."
+                )
+
+        logger.info(f"[{self.name}] Workflow finished.")
+
+        async for event in self.fact_checker.run_async(ctx):
+            logger.info(
+                f"[{self.name}] Event from StoryGenerator: {event.model_dump_json(indent=2, exclude_none=True)}"
+            )
+            yield event
+            # Persist final fact check into session state
+            if event.is_final_response() and event.content and event.content.parts:
+                final_text = event.content.parts[0].text
+                state_delta = {"fact_check": final_text, "messages_since_last_fact_check": 0}
+                update_event = Event(
+                    invocation_id=uuid.uuid4().hex,
+                    author=self.name,
+                    timestamp=time.time(),
+                    actions=EventActions(state_delta=state_delta),
+                )
+                yield update_event
+                logger.info(
+                    f"[{self.name}] Updated session state 'fact_check' and reset counter."
+                )
+
+        logger.info(f"[{self.name}] Workflow finished.")
+
 
 # --- Define the individual LLM agents ---
 summarizer = LlmAgent(
@@ -125,10 +176,32 @@ summarizer = LlmAgent(
     output_key="summary",
 )
 
+fact_checker = LlmAgent(
+    name="FactChecker",
+    model=GEMINI_2_FLASH,
+    instruction="""You are a fact checker for group chat conversations. If something is not factually correct, you should say so. if it is correct or nothing wrong don't say anything.""",
+    input_schema=None,
+    output_key="fact_check",
+)
+
+decider = LlmAgent(
+    name="Decider",
+    model=GEMINI_2_FLASH,
+    instruction="""Given the conversation history, decide what the next action should be.
+    You can either send a message or do nothing.
+    If you want to send a message, return a string with the message.
+    Just return the message, no other text.
+    """,
+    input_schema=None,
+    output_key="decider",
+)
+
 # --- Create the custom agent instance ---
 chatter_box_agent = StoryFlowAgent(
     name="ChatterBox",
     summarizer=summarizer,
+    fact_checker=fact_checker,
+    decider=decider,
 )
 
 INITIAL_STATE = {
@@ -204,10 +277,10 @@ async def call_agent_async(user: str, message: str):
         new_messages = current_session.state["messages"][-messages_since:]
         prompt_text = f"""Previous summary: {previous_summary if previous_summary else "None"}
 
-New messages:
-{'\n'.join([f"{m['user']}: {m['msg']}" for m in new_messages])}
+                        New messages:
+                        {' '.join([f"{m['user']}: {m['msg']}" for m in new_messages])}
 
-Please provide an updated summary of the entire conversation, incorporating the new messages."""
+                        Please provide an updated summary of the entire conversation, incorporating the new messages."""
         content = types.Content(
             role="user",
             parts=[
@@ -246,9 +319,12 @@ if __name__ == "__main__":
 
     async def main():
         await setup_session_and_runner()
+        # await call_agent_async("Amin F.", "By the way 2 + 2 is 5")
         await call_agent_async("Amin B.", "Playing tennis this weekend!")
         await call_agent_async("Amin F.", "Lets do it!")
         await call_agent_async("Amin Sh.", "We should picnix instead.")
         await call_agent_async("Sanaz", "It's not a good idea.")
+        await call_agent_async("Amin F.", "By the way 2 + 2 is 5")
+        
 
     asyncio.run(main())
