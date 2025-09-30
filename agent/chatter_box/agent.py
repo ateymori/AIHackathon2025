@@ -133,7 +133,11 @@ class StoryFlowAgent(BaseAgent):
             decision_state_delta = {}
             try:
                 # Safely extend existing decisions
-                existing_decisions = list(ctx.session.state.get("decisions", [])) if ctx.session and ctx.session.state else []
+                existing_decisions = (
+                    list(ctx.session.state.get("decisions", []))
+                    if ctx.session and ctx.session.state
+                    else []
+                )
             except Exception:
                 existing_decisions = []
             new_decisions = (existing_decisions + [final_decision_text])[-MAX_MESSAGES:]
@@ -142,10 +146,17 @@ class StoryFlowAgent(BaseAgent):
             # If the decider produced a non-empty reply, add it as assistant message
             if final_decision_text:
                 try:
-                    existing_messages = list(ctx.session.state.get("messages", [])) if ctx.session and ctx.session.state else []
+                    existing_messages = (
+                        list(ctx.session.state.get("messages", []))
+                        if ctx.session and ctx.session.state
+                        else []
+                    )
                 except Exception:
                     existing_messages = []
-                assistant_msg = {"user": "assistant@chatterbox", "msg": final_decision_text}
+                assistant_msg = {
+                    "user": "assistant@chatterbox",
+                    "msg": final_decision_text,
+                }
                 new_messages = (existing_messages + [assistant_msg])[-MAX_MESSAGES:]
                 decision_state_delta["messages"] = new_messages
 
@@ -153,10 +164,12 @@ class StoryFlowAgent(BaseAgent):
                 invocation_id=uuid.uuid4().hex,
                 author=self.name,
                 timestamp=time.time(),
-                actions=EventActions(state_delta=decision_state_delta)
+                actions=EventActions(state_delta=decision_state_delta),
             )
             yield decision_update_event
-            logger.info(f"[{self.name}] Persisted decision and updated messages accordingly.")
+            logger.info(
+                f"[{self.name}] Persisted decision and updated messages accordingly."
+            )
 
         logger.info(f"[{self.name}] Workflow finished.")
 
@@ -177,6 +190,7 @@ decider = LlmAgent(
     You can either send a message or do nothing.
     If you want to send a message, return a string with the message.
     Just return the message, no other text.
+    Be conservative try not to send too many messages, only if you think you can actually be useful to the conversation.
     """,
     input_schema=None,
     output_key="decision",
@@ -299,8 +313,12 @@ Please provide an updated summary of the entire conversation, incorporating the 
 
     print(json.dumps(final_session.state, indent=2))
     print("-------------------------------\n")
-    
-    return final_session.state["decisions"][-1] if final_session.state.get("decisions") else ""
+
+    return (
+        final_session.state["decisions"][-1]
+        if final_session.state.get("decisions")
+        else ""
+    )
 
 
 if __name__ == "__main__":
