@@ -6,6 +6,7 @@ import TeamSection from "../components/TeamSection";
 import FooterSection from "../components/FooterSection";
 import AboutSection from "../components/AboutSection";
 import { hackathon } from "../assets";
+import Chatbox from "../components/Chatbox";
 
 const HomePage: React.FC = () => {
   const [boxLoaded, setBoxLoaded] = useState(false);
@@ -27,6 +28,7 @@ const HomePage: React.FC = () => {
         onAnimationComplete={handleBoxLoad}
       >
         <MyNavbar />
+        <Chatbox title="Community Chat" height={520} maxMessages={500} />
         <HeroSection />
         <TeamSection />
         <AboutSection />

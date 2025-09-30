@@ -1,3 +1,9 @@
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def check_environment_variables() -> bool:
     # Determine whether to use Vertex AI or Google AI Studio
     use_vertex_ai = os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "false").strip().lower() in {
@@ -16,7 +22,7 @@ def check_environment_variables() -> bool:
             or os.getenv("GCP_PROJECT")
         )
         region = (
-            os.getenv("GOOGLE_CLOUD_REGION")
+            os.getenv("GOOGLE_CLOUD_LOCATION")
             or os.getenv("VERTEXAI_LOCATION")
             or os.getenv("GCP_REGION")
         )

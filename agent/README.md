@@ -8,8 +8,8 @@ TODO: Add description
 Create a virtual environment and install the dependencies.
 
 ```bash
-python -m venv venv
-source venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 Create a `.env` file with your Google AI Studio API key. You can copy from `.env.sample`.
