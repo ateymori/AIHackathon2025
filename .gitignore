@@ -24,3 +24,17 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+.venv/
+
+# Env files
+.env
+
+# Editor
+.vscode/
+.idea/
