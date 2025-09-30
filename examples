@@ -1,164 +1,137 @@
-🔹 Scenario 1: Weekend Brunch Chaos
-
-Chat
-
-Faye: “Brunch this weekend? 🍳”
-
-Yasaman: “Yes, but not too far downtown please, I don’t want to take the streetcar for 40 minutes.”
-
-Amin F.: “Guys, I live up at Steeles, downtown is a nightmare for me 😩.”
-
-Sanaz: “North York would be easier, but I don’t mind if you all want downtown.” (taarof)
-
-Amin B.: “Saturday works, but only in the morning. Soccer after 1pm.”
-
-Faye: “Oh, I’m busy Saturday morning… I can only do after 2pm.”
-
-Yasaman: “Hmm, I can’t do Saturday at all. Sunday only.”
-
-Amin Sh.: “I’m flexible either day. Just don’t pick somewhere too far south.”
-
-Amin F.: “If we do Sunday, earlier is better. I need to head back north by 3pm.”
-
-Sanaz: “I can adjust either way, really it’s fine 🙂.” (taarof again)
-
-Faye: “Okay this is confusing lol.”
-
-AI Agent:
-
-“I checked calendars: Saturday conflicts too much. Sunday 11am is clear for everyone. Weather: sunny 🌤. The midpoint is Yonge & Bloor, subway accessible. Recommend Bar Buca at Yonge & Bloor.”
-
-Yasaman: “Perfect 👏”
-
-Amin F.: “That’s much better. I’d never suggest Bloor but it’s fair.”
-
-Sanaz: “Honestly, saved us from 50 more messages 😂.”
-
-
-
-
-🔹 Scenario 2: After-Work Coffee Struggle
-
-Chat
-
-Sanaz: “Coffee after work this week?”
-
-Faye: “Yes, but not tomorrow, meetings till 7.”
-
-Amin Sh.: “Tomorrow is the only day I’m free 🥲.”
-
-Yasaman: “Wednesday I have yoga, can’t.”
-
-Amin B.: “Thursday works but only after 8pm.”
-
-Amin F.: “8pm is too late for me to drive back north.”
-
-Faye: “Then what about Friday?”
-
-Sanaz: “Friday I have family plans.”
-
-Amin Sh.: “So basically no day works 😂.”
-
-Yasaman: “This always happens with us!”
-
-Amin B.: “Let’s just pick something and whoever can’t, skips.”
-
-Sanaz: “No, I want everyone together.”
-
-Faye: “We’re stuck 😅.”
-
-AI Agent:
-
-“Calendars show Tuesday 6:30pm works for 5/6 of you. Weather: light rain 🌧 that evening. I recommend Dineen Coffee Co. at Yonge & Richmond — indoor, central. Sanaz can join by 6:40pm.”
-
-Yasaman: “YESSS finally 😍.”
-
-Sanaz: “This agent is smarter than all of us combined.”
-
-Amin Sh.: “Saved us an hour of chaos lol.”
-
-
-
-
-🔹 Scenario 3: Outdoor Picnic Dream
-
-Chat
-
-Yasaman: “Picnic this weekend? 🧺”
-
-Amin B.: “Love that idea! High Park?”
-
-Amin Sh.: “High Park is far for me from Sheppard… that’s almost an hour.”
-
-Faye: “Yeah same, from Dundas that’s too much.”
-
-Sanaz: “But High Park is big and nice 😍.”
-
-Amin F.: “I’ll have to drive all the way downtown… maybe Sunnybrook instead?”
-
-Yasaman: “Sunnybrook is fine, but is it subway accessible?”
-
-Amin B.: “Not really, you need a bus from Yonge.”
-
-Sanaz: “I don’t love buses tbh.”
-
-Faye: “Also, what day? Saturday or Sunday?”
-
-Amin Sh.: “Either works, but I prefer Saturday.”
-
-Yasaman: “Sunday is better for me but I can adjust 🙂.” (taarof)
-
-Sanaz: “We’ll be arguing all day at this rate 😅.”
-
-AI Agent:
-
-“Weather check: Saturday sunny, Sunday rain 🌧. Everyone free Saturday 3pm. Best midpoint: Sunnybrook Park, 30–40 mins for most, and Amin F. saves 40 mins of driving. Subway + bus access available.”
-
-Yasaman: “Okay that’s actually perfect.”
-
-Amin Sh.: “Done. I like this agent.”
-
-Sanaz: “This feels fair for everyone 💯.”
-
-
-
-
-🔹 Scenario 4: Urgent Work Session with Taarof
-
-Chat
-
-Faye: “We need to meet ASAP for the presentation.”
-
-Sanaz: “Can we do tomorrow?”
-
-Yasaman: “Tomorrow I have 4 back-to-back meetings 😓 but if everyone else wants, I’ll come.” (taarof)
-
-Amin F.: “What about Friday night?”
-
-Amin B.: “Friday night?? I’m not staying downtown that late.”
-
-Amin Sh.: “Thursday then?”
-
-Faye: “I have physio Thursday at 5.”
-
-Yasaman: “That’s okay, I’ll manage Sunday morning too if needed 🙂.” (taarof again)
-
-Sanaz: “Nooo Sunday is family day for me.”
-
-Amin F.: “This is impossible.”
-
-Faye: “Guys we’re going in circles 😩.”
-
-Sanaz: “I’ll just adjust, no worries.” (taarof)
-
-AI Agent:
-
-“I noticed several polite ‘it’s okay’ responses. But Yasaman and Sanaz are both overloaded tomorrow and Sunday. Thursday 6:30pm after Faye’s physio is the best compromise. Weather: heavy rain 🌧, so indoors is safer. Recommend Ryerson Library Café at Yonge & Dundas.”
-
-Faye: “That’s actually perfect.”
-
-Yasaman: “Thank you, I didn’t want to say no but tomorrow was really too much.”
-
-Amin B.: “See? The agent even understands taarof 😂.”
-
-Sanaz: “Finally we can agree without guilt 🤦‍♀️.”
+# --- Scenario 1: Weekend Brunch Chaos ---
+add_message("Faye", text="Brunch this weekend? 🍳")
+add_message("Yasaman", text="Yes, but not too far downtown please, I don’t want to take the streetcar for 40 minutes.")
+add_message("Amin F.", text="Guys, I live up at Steeles, downtown is a nightmare for me 😩.")
+# Sanaz sends another text message with Taarof being shy to say no
+add_message("Sanaz", text="North York would be easier, but I don’t mind if you all want downtown.")
+add_message("Amin B.", text="Saturday works, but only in the morning. Soccer after 1pm.")
+add_message("Faye", text="Oh, I’m busy Saturday morning… I can only do after 2pm.")
+add_message("Yasaman", text="Hmm, I can’t do Saturday at all. Sunday only.")
+add_message("Amin Sh.", text="I’m flexible either day. Just don’t pick somewhere too far south.")
+add_message("Amin F.", text="If we do Sunday, earlier is better. I need to head back north by 3pm.")
+# Sanaz repeats Taarof again
+add_message("Sanaz", text="I can adjust either way, really it’s fine 🙂.")
+add_message("Faye", text="Okay this is confusing lol.")
+# AI Agent suggests the optimal compromise
+add_message("AI Agent", text="I checked calendars: Saturday conflicts too much. Sunday 11am is clear for everyone. Weather: sunny 🌤. The midpoint is Yonge & Bloor, subway accessible. Recommend Bar Buca at Yonge & Bloor.")
+add_message("Yasaman", text="Perfect 👏")
+add_message("Amin F.", text="That’s much better. I’d never suggest Bloor but it’s fair.")
+add_message("Sanaz", text="Honestly, saved us from 50 more messages 😂.")
+
+# --- Scenario 2: Online Meeting for AI Thinkerers Hackathon ---
+add_message("Faye", text="Hey team, we need to schedule an online meeting after work for the AI Thinkerers Hackathon with Google on Sep 30, 2025.")
+add_message("Sanaz", text="I finish work at 6, so anytime after 6:30 is fine — unless my boss kidnaps me for ‘one last email.’ 😅")
+# Yasaman tries Taarof, even though overloaded
+add_message("Yasaman", text="I also end around 6, but honestly I have a ton going on… if everyone insists, I’ll join. (taarof)")
+add_message("Amin F.", text="I’ll still be stuck in traffic until 7… but hey, nothing screams ‘teamwork’ like me Zooming from my car 🚗💻.")
+add_message("Amin B.", text="7:30 works, but I refuse to stay past 9. My brain shuts down like Windows 95 after that. 💤")
+add_message("Amin Sh.", text="I’m flexible, just don’t make it too late — I have an early morning. My cat won’t forgive me if I skip breakfast duty 🐱.")
+add_message("Faye", text="So should we say 8pm? Or will that kill Amin B.’s operating system? 😂")
+# Sanaz does taarof, pretending it's fine
+add_message("Sanaz", text="8pm is okay, though I’d prefer earlier. But it’s fine 🙂. (taarof)")
+# AI Agent swoops in with logic + humor
+add_message("AI Agent", text="Optimizing schedules… best slot is 7:30–8:30pm. Everyone is awake, Amin F. is home, and Amin B.’s brain is still running on Windows XP instead of crashing. 🚀 Recommend Google Meet link for Sep 30, 7:30pm.")
+add_message("Yasaman", text="Finally, an agent that respects my hidden cries for help 😂.")
+add_message("Amin F.", text="Perfect. No car-Zooming needed.")
+add_message("Sanaz", text="Yes, 7:30 is good — I’ll try not to be kidnapped by emails.")
+add_message("Everyone", text="Agreed 🎉 let’s hack with Google like pros!")
+
+# --- Scenario 3: After-Work Coffee Struggle ---
+add_message("Sanaz", text="Coffee after work this week?")
+add_message("Faye", text="Yes, but not tomorrow, meetings till 7.")
+add_message("Amin Sh.", text="Tomorrow is the only day I’m free 🥲.")
+add_message("Yasaman", text="Wednesday I have yoga, can’t.")
+add_message("Amin B.", text="Thursday works but only after 8pm.")
+add_message("Amin F.", text="8pm is too late for me to drive back north.")
+add_message("Faye", text="Then what about Friday?")
+add_message("Sanaz", text="Friday I have family plans.")
+add_message("Amin Sh.", text="So basically no day works 😂.")
+add_message("Yasaman", text="This always happens with us!")
+add_message("Amin B.", text="Let’s just pick something and whoever can’t, skips.")
+add_message("Sanaz", text="No, I want everyone together.")
+add_message("Faye", text="We’re stuck 😅.")
+# AI Agent finds the only workable slot
+add_message("AI Agent", text="Calendars show Tuesday 6:30pm works for 5/6 of you. Weather: light rain 🌧 that evening. I recommend Dineen Coffee Co. at Yonge & Richmond — indoor, central. Sanaz can join by 6:40pm.")
+add_message("Yasaman", text="YESSS finally 😍.")
+add_message("Sanaz", text="This agent is smarter than all of us combined.")
+add_message("Amin Sh.", text="Saved us an hour of chaos lol.")
+
+# --- Scenario 4: Outdoor Picnic Dream ---
+add_message("Yasaman", text="Picnic this weekend? 🧺")
+add_message("Amin B.", text="Love that idea! High Park?")
+add_message("Amin Sh.", text="High Park is far for me from Sheppard… that’s almost an hour.")
+add_message("Faye", text="Yeah same, from Dundas that’s too much.")
+add_message("Sanaz", text="But High Park is big and nice 😍.")
+add_message("Amin F.", text="I’ll have to drive all the way downtown… maybe Sunnybrook instead?")
+add_message("Yasaman", text="Sunnybrook is fine, but is it subway accessible?")
+add_message("Amin B.", text="Not really, you need a bus from Yonge.")
+add_message("Sanaz", text="I don’t love buses tbh.")
+add_message("Faye", text="Also, what day? Saturday or Sunday?")
+add_message("Amin Sh.", text="Either works, but I prefer Saturday.")
+# Yasaman politely does Taarof, offering to adjust
+add_message("Yasaman", text="Sunday is better for me but I can adjust 🙂.")
+add_message("Sanaz", text="We’ll be arguing all day at this rate 😅.")
+# AI Agent checks weather + travel times and suggests Saturday
+add_message("AI Agent", text="Weather check: Saturday sunny, Sunday rain 🌧. Everyone free Saturday 3pm. Best midpoint: Sunnybrook Park, 30–40 mins for most, and Amin F. saves 40 mins of driving. Subway + bus access available.")
+add_message("Yasaman", text="Okay that’s actually perfect.")
+add_message("Amin Sh.", text="Done. I like this agent.")
+add_message("Sanaz", text="This feels fair for everyone 💯.")
+
+# --- Scenario 5: Urgent Work Session with Taarof ---
+add_message("Faye", text="We need to meet ASAP for the presentation.")
+add_message("Sanaz", text="Can we do tomorrow?")
+# Yasaman does Taarof, overloaded but agrees anyway
+add_message("Yasaman", text="Tomorrow I have 4 back-to-back meetings 😓 but if everyone else wants, I’ll come.")
+add_message("Amin F.", text="What about Friday night?")
+add_message("Amin B.", text="Friday night?? I’m not staying downtown that late.")
+add_message("Amin Sh.", text="Thursday then?")
+add_message("Faye", text="I have physio Thursday at 5.")
+# Yasaman repeats Taarof
+add_message("Yasaman", text="That’s okay, I’ll manage Sunday morning too if needed 🙂.")
+add_message("Sanaz", text="Nooo Sunday is family day for me.")
+add_message("Amin F.", text="This is impossible.")
+add_message("Faye", text="Guys we’re going in circles 😩.")
+# Sanaz also does Taarof
+add_message("Sanaz", text="I’ll just adjust, no worries.")
+# AI Agent detects taarof and resolves with Thursday compromise
+add_message("AI Agent", text="I noticed several polite ‘it’s okay’ responses. But Yasaman and Sanaz are both overloaded tomorrow and Sunday. Thursday 6:30pm after Faye’s physio is the best compromise. Weather: heavy rain 🌧, so indoors is safer. Recommend Ryerson Library Café at Yonge & Dundas.")
+add_message("Faye", text="That’s actually perfect.")
+add_message("Yasaman", text="Thank you, I didn’t want to say no but tomorrow was really too much.")
+add_message("Amin B.", text="See? The agent even understands taarof 😂.")
+add_message("Sanaz", text="Finally we can agree without guilt 🤦‍♀️.")
+
+# --- Scenario 6: Easy Movie Night ---
+add_message("Faye", text="Want to do a movie night this Friday? 🎬")
+add_message("Amin B.", text="Yes! I’m free after 7.")
+add_message("Sanaz", text="Same, 7pm works for me too.")
+add_message("Yasaman", text="Perfect, I finish work around 6:30 downtown.")
+add_message("Amin Sh.", text="I’m good with 7 as well.")
+add_message("Amin F.", text="I’ll just drive down, no problem.")
+add_message("Faye", text="Let’s do Scotiabank Theatre at 7:30?")
+add_message("Sanaz", text="Done!")
+add_message("Yasaman", text="Done ✅.")
+add_message("Everyone", text="Agreed 👏👏.")
+# Quick consensus — no agent needed
+
+# --- Scenario 7: Celebrating a Birthday ---
+add_message("Sanaz", text="My birthday is next Thursday 🥳 dinner together?")
+add_message("Faye", text="Yes! Happy early birthday 🧡 count me in.")
+add_message("Yasaman", text="Of course, let’s celebrate 🎉.")
+add_message("Amin F.", text="Definitely, I’ll be there.")
+add_message("Amin B.", text="Next Thursday is good for me too.")
+add_message("Amin Sh.", text="Me too, I’ll bring dessert 😋.")
+add_message("Sanaz", text="Yay! Let’s go to Cactus Club on Adelaide, 7pm.")
+add_message("Faye", text="Perfect choice.")
+add_message("Everyone", text="Agreed 🎂.")
+# Since it’s for Sanaz’s birthday, everyone immediately commits
+
+# --- Scenario 8: Spontaneous Coffee Break ---
+add_message("Amin B.", text="I’m at Yonge & Eglinton right now, anyone nearby for coffee?")
+add_message("Sanaz", text="Yes! I’m literally across the street. Meet in 10?")
+add_message("Faye", text="I’m downtown, so too far. Next time!")
+add_message("Yasaman", text="Same, I’m at Peter & Adelaide, can’t make it.")
+add_message("Amin Sh.", text="I’m close but in a meeting, sorry!")
+add_message("Amin F.", text="Too far north for me.")
+add_message("Amin B.", text="Okay, Sanaz and I will grab coffee now ☕️.")
+add_message("Sanaz", text="Perfect!")
+# Quick decision since only two are close and free
