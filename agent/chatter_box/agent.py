@@ -42,14 +42,7 @@ class StoryFlowAgent(BaseAgent):
 
     # --- Field Declarations for Pydantic ---
     # Declare the agents passed during initialization as class attributes with type hints
-    story_generator: LlmAgent
-    critic: LlmAgent
-    reviser: LlmAgent
-    grammar_check: LlmAgent
-    tone_check: LlmAgent
-
-    loop_agent: LoopAgent
-    sequential_agent: SequentialAgent
+    summarizer: LlmAgent
 
     # model_config allows setting Pydantic configurations if needed, e.g., arbitrary_types_allowed
     model_config = {"arbitrary_types_allowed": True}
@@ -57,11 +50,7 @@ class StoryFlowAgent(BaseAgent):
     def __init__(
         self,
         name: str,
-        story_generator: LlmAgent,
-        critic: LlmAgent,
-        reviser: LlmAgent,
-        grammar_check: LlmAgent,
-        tone_check: LlmAgent,
+        summarizer: LlmAgent,
     ):
         """
         Initializes the StoryFlowAgent.
@@ -74,31 +63,16 @@ class StoryFlowAgent(BaseAgent):
             grammar_check: An LlmAgent to check the grammar.
             tone_check: An LlmAgent to analyze the tone.
         """
-        # Create internal agents *before* calling super().__init__
-        loop_agent = LoopAgent(
-            name="CriticReviserLoop", sub_agents=[critic, reviser], max_iterations=2
-        )
-        sequential_agent = SequentialAgent(
-            name="PostProcessing", sub_agents=[grammar_check, tone_check]
-        )
 
         # Define the sub_agents list for the framework
         sub_agents_list = [
-            story_generator,
-            loop_agent,
-            sequential_agent,
+            summarizer,
         ]
 
         # Pydantic will validate and assign them based on the class annotations.
         super().__init__(
             name=name,
-            story_generator=story_generator,
-            critic=critic,
-            reviser=reviser,
-            grammar_check=grammar_check,
-            tone_check=tone_check,
-            loop_agent=loop_agent,
-            sequential_agent=sequential_agent,
+            summarizer=summarizer,
             sub_agents=sub_agents_list,  # Pass the sub_agents list directly
         )
 
@@ -114,17 +88,14 @@ class StoryFlowAgent(BaseAgent):
 
         # 1. Initial Story Generation
         logger.info(f"[{self.name}] Running StoryGenerator...")
-        async for event in self.story_generator.run_async(ctx):
+        async for event in self.summarizer.run_async(ctx):
             logger.info(
                 f"[{self.name}] Event from StoryGenerator: {event.model_dump_json(indent=2, exclude_none=True)}"
             )
             yield event
 
         # Check if story was generated before proceeding
-        if (
-            "current_story" not in ctx.session.state
-            or not ctx.session.state["current_story"]
-        ):
+        if not ctx.session.state.get("summary"):
             logger.error(
                 f"[{self.name}] Failed to generate initial story. Aborting workflow."
             )
@@ -134,103 +105,32 @@ class StoryFlowAgent(BaseAgent):
             f"[{self.name}] Story state after generator: {ctx.session.state.get('current_story')}"
         )
 
-        # 2. Critic-Reviser Loop
-        logger.info(f"[{self.name}] Running CriticReviserLoop...")
-        # Use the loop_agent instance attribute assigned during init
-        async for event in self.loop_agent.run_async(ctx):
-            logger.info(
-                f"[{self.name}] Event from CriticReviserLoop: {event.model_dump_json(indent=2, exclude_none=True)}"
-            )
-            yield event
-
-        logger.info(
-            f"[{self.name}] Story state after loop: {ctx.session.state.get('current_story')}"
-        )
-
-        # 3. Sequential Post-Processing (Grammar and Tone Check)
-        logger.info(f"[{self.name}] Running PostProcessing...")
-        # Use the sequential_agent instance attribute assigned during init
-        async for event in self.sequential_agent.run_async(ctx):
-            logger.info(
-                f"[{self.name}] Event from PostProcessing: {event.model_dump_json(indent=2, exclude_none=True)}"
-            )
-            yield event
-
-        # 4. Tone-Based Conditional Logic
-        tone_check_result = ctx.session.state.get("tone_check_result")
-        logger.info(f"[{self.name}] Tone check result: {tone_check_result}")
-
-        if tone_check_result == "negative":
-            logger.info(f"[{self.name}] Tone is negative. Regenerating story...")
-            async for event in self.story_generator.run_async(ctx):
-                logger.info(
-                    f"[{self.name}] Event from StoryGenerator (Regen): {event.model_dump_json(indent=2, exclude_none=True)}"
-                )
-                yield event
-        else:
-            logger.info(f"[{self.name}] Tone is not negative. Keeping current story.")
-            pass
-
         logger.info(f"[{self.name}] Workflow finished.")
 
 
 # --- Define the individual LLM agents ---
-story_generator = LlmAgent(
-    name="StoryGenerator",
+summarizer = LlmAgent(
+    name="Summerizer",
     model=GEMINI_2_FLASH,
-    instruction="""You are a story writer. Write a short story (around 100 words), on the following topic: {topic}""",
+    instruction="""You are supposed to summarize a list of messages of a group chat.""",
     input_schema=None,
-    output_key="current_story",  # Key for storing output in session state
-)
-
-critic = LlmAgent(
-    name="Critic",
-    model=GEMINI_2_FLASH,
-    instruction="""You are a story critic. Review the story provided: {{current_story}}. Provide 1-2 sentences of constructive criticism
-on how to improve it. Focus on plot or character.""",
-    input_schema=None,
-    output_key="criticism",  # Key for storing criticism in session state
-)
-
-reviser = LlmAgent(
-    name="Reviser",
-    model=GEMINI_2_FLASH,
-    instruction="""You are a story reviser. Revise the story provided: {{current_story}}, based on the criticism in
-{{criticism}}. Output only the revised story.""",
-    input_schema=None,
-    output_key="current_story",  # Overwrites the original story
-)
-
-grammar_check = LlmAgent(
-    name="GrammarCheck",
-    model=GEMINI_2_FLASH,
-    instruction="""You are a grammar checker. Check the grammar of the story provided: {current_story}. Output only the suggested
-corrections as a list, or output 'Grammar is good!' if there are no errors.""",
-    input_schema=None,
-    output_key="grammar_suggestions",
-)
-
-tone_check = LlmAgent(
-    name="ToneCheck",
-    model=GEMINI_2_FLASH,
-    instruction="""You are a tone analyzer. Analyze the tone of the story provided: {current_story}. Output only one word: 'positive' if
-the tone is generally positive, 'negative' if the tone is generally negative, or 'neutral'
-otherwise.""",
-    input_schema=None,
-    output_key="tone_check_result",  # This agent's output determines the conditional flow
+    output_key="summary",
 )
 
 # --- Create the custom agent instance ---
-story_flow_agent = StoryFlowAgent(
-    name="StoryFlowAgent",
-    story_generator=story_generator,
-    critic=critic,
-    reviser=reviser,
-    grammar_check=grammar_check,
-    tone_check=tone_check,
+chatter_box_agent = StoryFlowAgent(
+    name="ChatterBox",
+    summarizer=summarizer,
 )
 
-INITIAL_STATE = {"topic": "a brave kitten exploring a haunted house"}
+INITIAL_STATE = {
+    "messages": [
+        {"user": "amin@gmail.com", "msg": "Tennis tomorrow?"},
+        {"user": "ali@gmail.com", "msg": "Sure."},
+    ],
+    "summary": "",
+    "messages_since_last_summary": 0,
+}
 global_session_service = None
 global_runner = None
 
@@ -245,7 +145,7 @@ async def setup_session_and_runner():
     )
     logger.info(f"Initial session state: {session.state}")
     runner = Runner(
-        agent=story_flow_agent,  # Pass the custom orchestrator agent
+        agent=chatter_box_agent,  # Pass the custom orchestrator agent
         app_name=APP_NAME,
         session_service=session_service,
     )
@@ -259,6 +159,7 @@ async def call_agent_async(user: str, message: str):
     Sends a new topic to the agent (overwriting the initial one if needed)
     and runs the workflow.
     """
+    new_msg = {"user": user, "msg": message}
 
     current_session = await global_session_service.get_session(
         app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
@@ -267,13 +168,15 @@ async def call_agent_async(user: str, message: str):
         logger.error("Session not found!")
         return
 
-    user_input_topic = message
-    current_session.state["topic"] = user_input_topic
-    logger.info(f"Updated session state topic to: {user_input_topic}")
+    current_session.state["messages"].append(new_msg)
+    logger.info(f"Added this message to state: {new_msg}")
 
     content = types.Content(
         role="user",
-        parts=[types.Part(text=f"Generate a story about: {user_input_topic}")],
+        parts=[
+            types.Part(text=new_msg["user"]),
+            types.Part(text=new_msg["msg"]),
+        ],
     )
     events = global_runner.run_async(
         user_id=USER_ID, session_id=SESSION_ID, new_message=content
