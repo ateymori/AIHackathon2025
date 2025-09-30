@@ -18,7 +18,7 @@ add_message("Yasaman", text="Perfect 👏")
 add_message("Amin F.", text="That’s much better. I’d never suggest Bloor but it’s fair.")
 add_message("Sanaz", text="Honestly, saved us from 50 more messages 😂.")
 
-# --- Scenario 2: Online Meeting for AI Thinkerers Hackathon ---
+# --- Scenario 2: Online Meeting for AI Thinkerers Hackathon (funny + with an image) ---
 add_message("Faye", text="Hey team, we need to schedule an online meeting after work for the AI Thinkerers Hackathon with Google on Sep 30, 2025.")
 add_message("Sanaz", text="I finish work at 6, so anytime after 6:30 is fine — unless my boss kidnaps me for ‘one last email.’ 😅")
 # Yasaman tries Taarof, even though overloaded
@@ -26,6 +26,8 @@ add_message("Yasaman", text="I also end around 6, but honestly I have a ton goin
 add_message("Amin F.", text="I’ll still be stuck in traffic until 7… but hey, nothing screams ‘teamwork’ like me Zooming from my car 🚗💻.")
 add_message("Amin B.", text="7:30 works, but I refuse to stay past 9. My brain shuts down like Windows 95 after that. 💤")
 add_message("Amin Sh.", text="I’m flexible, just don’t make it too late — I have an early morning. My cat won’t forgive me if I skip breakfast duty 🐱.")
+# Faye shares the hackathon banner/schedule
+add_message("Faye", text="Agenda sneak peek — looks packed 🔧🤖", image_path=SAMPLE_IMAGE_PATH)
 add_message("Faye", text="So should we say 8pm? Or will that kill Amin B.’s operating system? 😂")
 # Sanaz does taarof, pretending it's fine
 add_message("Sanaz", text="8pm is okay, though I’d prefer earlier. But it’s fine 🙂. (taarof)")
