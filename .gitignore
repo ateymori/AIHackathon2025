@@ -38,3 +38,13 @@ __pycache__/
 # Editor
 .vscode/
 .idea/
+
+# environment
+.venv/
+
+# api keys
+key.json
+.env
+
+# chace
+__pycache__/
