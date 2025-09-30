@@ -26,7 +26,8 @@ check_environment_variables()
 APP_NAME = "story_app"
 USER_ID = "12345"
 SESSION_ID = "123344"
-GEMINI_2_FLASH = "gemini-2.0-flash"
+# GEMINI_MODEL = "gemini-2.5-pro"
+GEMINI_MODEL = "gemini-2.0-flash"
 MAX_MESSAGES = 10
 MAX_MESSAGES_BEFORE_SUMMARY = 3
 
@@ -177,7 +178,7 @@ class StoryFlowAgent(BaseAgent):
 # --- Define the individual LLM agents ---
 summarizer = LlmAgent(
     name="Summerizer",
-    model=GEMINI_2_FLASH,
+    model=GEMINI_MODEL,
     instruction="""You are a summarizer for group chat conversations.""",
     input_schema=None,
     output_key="summary",
@@ -185,12 +186,16 @@ summarizer = LlmAgent(
 
 decider = LlmAgent(
     name="Decider",
-    model=GEMINI_2_FLASH,
-    instruction="""Given the conversation history, decide what the next action should be.
-    You can either send a message or do nothing.
-    If you want to send a message, return a string with the message.
-    Just return the message, no other text.
+    model=GEMINI_MODEL,
+    instruction="""
+    You are in a group chat and multiple people are chatting with each other.
+    You are a helpful person that sometimes contributes to the conversation and stays silent otherwise.
+    Given the conversation history.
+    Either send a string message or an empty string if you don't want to contribute.
+    If you don't have anything to add to the conversation, just output an empty string and nothing else.
+    Just return the message, no other text. 
     Be conservative try not to send too many messages, only if you think you can actually be useful to the conversation.
+    Answers their questions.
     """,
     input_schema=None,
     output_key="decision",
