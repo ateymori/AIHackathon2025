@@ -2,8 +2,8 @@ import logging
 from typing import AsyncGenerator
 from typing_extensions import override
 import asyncio
+import sys
 import os
-
 from dotenv import load_dotenv
 
 from google.adk.agents import LlmAgent, BaseAgent, LoopAgent, SequentialAgent
@@ -13,6 +13,7 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
 from google.adk.events import Event
 from pydantic import BaseModel, Field
+from utils import check_environment_variables
 
 # --- Load environment and constants ---
 load_dotenv()
@@ -230,10 +231,14 @@ story_flow_agent = StoryFlowAgent(
 )
 
 INITIAL_STATE = {"topic": "a brave kitten exploring a haunted house"}
+global_session_service = None
+global_runner = None
 
 
 # --- Setup Runner and Session ---
 async def setup_session_and_runner():
+    global global_session_service, global_runner
+
     session_service = InMemorySessionService()
     session = await session_service.create_session(
         app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID, state=INITIAL_STATE
@@ -244,25 +249,25 @@ async def setup_session_and_runner():
         app_name=APP_NAME,
         session_service=session_service,
     )
-    return session_service, runner
+    global_session_service = session_service
+    global_runner = runner
 
 
 # --- Function to Interact with the Agent ---
-async def call_agent_async(user_input_topic: str):
+async def call_agent_async(user: str, message: str):
     """
     Sends a new topic to the agent (overwriting the initial one if needed)
     and runs the workflow.
     """
 
-    session_service, runner = await setup_session_and_runner()
-
-    current_session = await session_service.get_session(
+    current_session = await global_session_service.get_session(
         app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
     )
     if not current_session:
         logger.error("Session not found!")
         return
 
+    user_input_topic = message
     current_session.state["topic"] = user_input_topic
     logger.info(f"Updated session state topic to: {user_input_topic}")
 
@@ -270,7 +275,7 @@ async def call_agent_async(user_input_topic: str):
         role="user",
         parts=[types.Part(text=f"Generate a story about: {user_input_topic}")],
     )
-    events = runner.run_async(
+    events = global_runner.run_async(
         user_id=USER_ID, session_id=SESSION_ID, new_message=content
     )
 
@@ -285,7 +290,7 @@ async def call_agent_async(user_input_topic: str):
     print("\n--- Agent Interaction Result ---")
     print("Agent Final Response: ", final_response)
 
-    final_session = await session_service.get_session(
+    final_session = await global_session_service.get_session(
         app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
     )
     print("Final Session State:")
@@ -295,9 +300,61 @@ async def call_agent_async(user_input_topic: str):
     print("-------------------------------\n")
 
 
+# # --- Function to Interact with the Agent ---
+# async def call_agent_async(user_input_topic: str):
+#     """
+#     Sends a new topic to the agent (overwriting the initial one if needed)
+#     and runs the workflow.
+#     """
+
+#     session_service, runner = await setup_session_and_runner()
+
+#     current_session = await session_service.get_session(
+#         app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
+#     )
+#     if not current_session:
+#         logger.error("Session not found!")
+#         return
+
+#     current_session.state["topic"] = user_input_topic
+#     logger.info(f"Updated session state topic to: {user_input_topic}")
+
+#     content = types.Content(
+#         role="user",
+#         parts=[types.Part(text=f"Generate a story about: {user_input_topic}")],
+#     )
+#     events = runner.run_async(
+#         user_id=USER_ID, session_id=SESSION_ID, new_message=content
+#     )
+
+#     final_response = "No final response captured."
+#     async for event in events:
+#         if event.is_final_response() and event.content and event.content.parts:
+#             logger.info(
+#                 f"Potential final response from [{event.author}]: {event.content.parts[0].text}"
+#             )
+#             final_response = event.content.parts[0].text
+
+#     print("\n--- Agent Interaction Result ---")
+#     print("Agent Final Response: ", final_response)
+
+#     final_session = await session_service.get_session(
+#         app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
+#     )
+#     print("Final Session State:")
+#     import json
+
+#     print(json.dumps(final_session.state, indent=2))
+#     print("-------------------------------\n")
+
+
 if __name__ == "__main__":
     # --- Run the Agent ---
     # Note: In Colab, you can directly use 'await' at the top level.
     # If running this code as a standalone Python script, you'll need to use asyncio.run() or manage the event loop.
     # await call_agent_async("a lonely robot finding a friend in a junkyard")
-    asyncio.run(call_agent_async("a lonely robot finding a friend in a junkyard"))
+    async def main():
+        await setup_session_and_runner()
+        await call_agent_async("Amin", "Playing tennis this weekend!")
+
+    asyncio.run(main())
