@@ -3,7 +3,9 @@ from typing import AsyncGenerator
 from typing_extensions import override
 import asyncio
 import sys
+import time
 import os
+import uuid
 from dotenv import load_dotenv
 
 from google.adk.agents import LlmAgent, BaseAgent, LoopAgent, SequentialAgent
@@ -13,6 +15,7 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
 from google.adk.events import Event
 from pydantic import BaseModel, Field
+from google.adk.events import Event, EventActions
 from utils import check_environment_variables
 
 # --- Load environment and constants ---
@@ -24,6 +27,8 @@ APP_NAME = "story_app"
 USER_ID = "12345"
 SESSION_ID = "123344"
 GEMINI_2_FLASH = "gemini-2.0-flash"
+MAX_MESSAGES = 10
+MAX_MESSAGES_BEFORE_SUMMARY = 3
 
 # --- Configure Logging ---
 logging.basicConfig(level=logging.INFO)
@@ -93,17 +98,21 @@ class StoryFlowAgent(BaseAgent):
                 f"[{self.name}] Event from StoryGenerator: {event.model_dump_json(indent=2, exclude_none=True)}"
             )
             yield event
-
-        # Check if story was generated before proceeding
-        if not ctx.session.state.get("summary"):
-            logger.error(
-                f"[{self.name}] Failed to generate initial story. Aborting workflow."
-            )
-            return  # Stop processing if initial story failed
-
-        logger.info(
-            f"[{self.name}] Story state after generator: {ctx.session.state.get('current_story')}"
-        )
+            # Persist final summary into session state
+            if event.is_final_response() and event.content and event.content.parts:
+                final_text = event.content.parts[0].text
+                state_delta = {
+                    "summary": final_text,
+                    "messages_since_last_summary": 0
+                }
+                update_event = Event(
+                    invocation_id=uuid.uuid4().hex,
+                    author=self.name,
+                    timestamp=time.time(),
+                    actions=EventActions(state_delta=state_delta)
+                )
+                yield update_event
+                logger.info(f"[{self.name}] Updated session state 'summary' and reset counter.")
 
         logger.info(f"[{self.name}] Workflow finished.")
 
@@ -112,7 +121,7 @@ class StoryFlowAgent(BaseAgent):
 summarizer = LlmAgent(
     name="Summerizer",
     model=GEMINI_2_FLASH,
-    instruction="""You are supposed to summarize a list of messages of a group chat.""",
+    instruction="""You are a summarizer for group chat conversations.""",
     input_schema=None,
     output_key="summary",
 )
@@ -153,6 +162,21 @@ async def setup_session_and_runner():
     global_runner = runner
 
 
+async def append_message_to_state(session, msg: dict):
+    # state_changes is a dict of key → new_value you want to inject
+    state_changes = {
+        "messages": (session.state["messages"] + [msg])[-MAX_MESSAGES:],
+        "messages_since_last_summary": session.state.get("messages_since_last_summary", 0) + 1,
+    }
+    actions = EventActions(state_delta=state_changes)
+    evt = Event(
+        invocation_id=uuid.uuid4().hex,
+        author="system",
+        actions=actions,
+        timestamp=time.time()
+    )
+    await global_session_service.append_event(session=session, event=evt)
+
 # --- Function to Interact with the Agent ---
 async def call_agent_async(user: str, message: str):
     """
@@ -168,27 +192,39 @@ async def call_agent_async(user: str, message: str):
         logger.error("Session not found!")
         return
 
-    current_session.state["messages"].append(new_msg)
+    await append_message_to_state(current_session, new_msg)
     logger.info(f"Added this message to state: {new_msg}")
 
-    content = types.Content(
-        role="user",
-        parts=[
-            types.Part(text=new_msg["user"]),
-            types.Part(text=new_msg["msg"]),
-        ],
-    )
-    events = global_runner.run_async(
-        user_id=USER_ID, session_id=SESSION_ID, new_message=content
-    )
+    messages_since = current_session.state["messages_since_last_summary"]
+    if messages_since >= MAX_MESSAGES_BEFORE_SUMMARY:
+        previous_summary = current_session.state["summary"]
+        new_messages = current_session.state["messages"][-messages_since:]
+        prompt_text = f"""Previous summary: {previous_summary if previous_summary else "None"}
 
-    final_response = "No final response captured."
-    async for event in events:
-        if event.is_final_response() and event.content and event.content.parts:
-            logger.info(
-                f"Potential final response from [{event.author}]: {event.content.parts[0].text}"
-            )
-            final_response = event.content.parts[0].text
+New messages:
+{'\n'.join([f"{m['user']}: {m['msg']}" for m in new_messages])}
+
+Please provide an updated summary of the entire conversation, incorporating the new messages."""
+        content = types.Content(
+            role="user",
+            parts=[
+                types.Part(text=prompt_text),
+            ],
+        )
+        events = global_runner.run_async(
+            user_id=USER_ID, session_id=SESSION_ID, new_message=content
+        )
+
+        final_response = "No final response captured."
+        async for event in events:
+            if event.is_final_response() and event.content and event.content.parts:
+                logger.info(
+                    f"Potential final response from [{event.author}]: {event.content.parts[0].text}"
+                )
+                final_response = event.content.parts[0].text
+    else:
+        final_response = current_session.state["summary"]
+        logger.info("No summary needed yet.")
 
     print("\n--- Agent Interaction Result ---")
     print("Agent Final Response: ", final_response)
@@ -203,61 +239,13 @@ async def call_agent_async(user: str, message: str):
     print("-------------------------------\n")
 
 
-# # --- Function to Interact with the Agent ---
-# async def call_agent_async(user_input_topic: str):
-#     """
-#     Sends a new topic to the agent (overwriting the initial one if needed)
-#     and runs the workflow.
-#     """
-
-#     session_service, runner = await setup_session_and_runner()
-
-#     current_session = await session_service.get_session(
-#         app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
-#     )
-#     if not current_session:
-#         logger.error("Session not found!")
-#         return
-
-#     current_session.state["topic"] = user_input_topic
-#     logger.info(f"Updated session state topic to: {user_input_topic}")
-
-#     content = types.Content(
-#         role="user",
-#         parts=[types.Part(text=f"Generate a story about: {user_input_topic}")],
-#     )
-#     events = runner.run_async(
-#         user_id=USER_ID, session_id=SESSION_ID, new_message=content
-#     )
-
-#     final_response = "No final response captured."
-#     async for event in events:
-#         if event.is_final_response() and event.content and event.content.parts:
-#             logger.info(
-#                 f"Potential final response from [{event.author}]: {event.content.parts[0].text}"
-#             )
-#             final_response = event.content.parts[0].text
-
-#     print("\n--- Agent Interaction Result ---")
-#     print("Agent Final Response: ", final_response)
-
-#     final_session = await session_service.get_session(
-#         app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
-#     )
-#     print("Final Session State:")
-#     import json
-
-#     print(json.dumps(final_session.state, indent=2))
-#     print("-------------------------------\n")
-
-
 if __name__ == "__main__":
-    # --- Run the Agent ---
-    # Note: In Colab, you can directly use 'await' at the top level.
-    # If running this code as a standalone Python script, you'll need to use asyncio.run() or manage the event loop.
-    # await call_agent_async("a lonely robot finding a friend in a junkyard")
+
     async def main():
         await setup_session_and_runner()
-        await call_agent_async("Amin", "Playing tennis this weekend!")
+        await call_agent_async("Amin B.", "Playing tennis this weekend!")
+        await call_agent_async("Amin F.", "Lets do it!")
+        await call_agent_async("Amin Sh.", "We should picnix instead.")
+        await call_agent_async("Sanaz", "It's not a good idea.")
 
     asyncio.run(main())
