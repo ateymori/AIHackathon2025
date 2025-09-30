@@ -15,10 +15,10 @@ pip install -r requirements.txt
 Create a `.env` file with your Google AI Studio API key. You can copy from `.env.sample`.
 
 ```bash
-cp chatter_box/.env.sample chatter_box/.env
+cp .env.sample .env
 ```
 
-Then open `chatter_box/.env` and fill in your Google AI Studio API key:
+Then open `.env` and fill in your Google AI Studio API key:
 
 ```bash
 GOOGLE_API_KEY=your_gemini_api_key_here
