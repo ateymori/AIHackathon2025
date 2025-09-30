@@ -1,3 +1,4 @@
+// backend/server.js
 const express = require('express');
 const cors = require('cors');
 const { randomUUID } = require('crypto');
@@ -7,45 +8,60 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 4000;
 const MAX_MESSAGES = 500;
-const DATA_FILE = path.join(__dirname, 'messages.json');
 
-app.use(cors());               // allow your frontend (http://localhost:5000) by default
+// Always store here: <repo>/backend/data/messages.json
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'messages.json');
+
+app.use(cors({ origin: true }));             // allow all origins in dev
 app.use(express.json({ limit: '1mb' }));
 
-// Simple in-memory subscriber list for SSE
-const clients = new Set();
+const clients = new Set(); // SSE connections
 
-// Helpers
+async function ensureStorage() {
+  try { await fs.mkdir(DATA_DIR, { recursive: true }); } catch {}
+  try { await fs.access(DATA_FILE); }
+  catch { await fs.writeFile(DATA_FILE, '[]', 'utf8'); }
+}
+
 async function loadMessages() {
   try {
     const raw = await fs.readFile(DATA_FILE, 'utf8');
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? arr : [];
-  } catch {
+  } catch (err) {
+    console.error('[messages] read error:', err);
     return [];
   }
 }
 
 async function saveMessages(list) {
-  // Trim and write atomically
   const trimmed = list.slice(-MAX_MESSAGES);
-  await fs.writeFile(DATA_FILE, JSON.stringify(trimmed, null, 2), 'utf8');
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(DATA_FILE, JSON.stringify(trimmed, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[messages] write error:', err);
+  }
   return trimmed;
 }
 
 function broadcast(eventName, data) {
   const payload = `event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const res of clients) {
-    try { res.write(payload); } catch { /* ignore */ }
+    try { res.write(payload); } catch {}
   }
 }
 
-// Routes
-app.get('/api/messages', async (req, res) => {
+// History
+app.get('/api/messages', async (_req, res) => {
   const list = await loadMessages();
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Cache-Control', 'no-store');
   res.json(list);
 });
 
+// Create
 app.post('/api/messages', async (req, res) => {
   const { userId, name, text } = req.body || {};
   if (!userId || !name || !text || !String(text).trim()) {
@@ -58,28 +74,45 @@ app.post('/api/messages', async (req, res) => {
     text: String(text).slice(0, 2000),
     timestamp: Date.now(),
   };
+
   const list = await loadMessages();
   list.push(message);
-  const saved = await saveMessages(list);
+  await saveMessages(list);
 
-  broadcast('message', message);
+  res.set('Access-Control-Allow-Origin', '*');
   res.status(201).json(message);
+  broadcast('message', message);
 });
 
-// SSE stream for realtime
-app.get('/api/stream', async (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders?.();
+// SSE stream
+app.get('/api/stream', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'X-Accel-Buffering': 'no',
+  });
 
-  // Immediately send a comment to keep connection alive
-  res.write(`: connected\n\n`);
+  res.write('event: hello\ndata: "connected"\n\n');
+
+  const heartbeat = setInterval(() => {
+    res.write(': ping\n\n'); // keep-alive
+  }, 15000);
 
   clients.add(res);
-  req.on('close', () => clients.delete(res));
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    clients.delete(res);
+  });
 });
 
-app.listen(PORT, () => {
-  console.log(`API listening on http://localhost:${PORT}`);
+// Health
+app.get('/health', (_req, res) => res.send('ok'));
+
+ensureStorage().then(() => {
+  app.listen(PORT, () => {
+    console.log(`API listening on http://localhost:${PORT}`);
+    console.log('Messages file:', DATA_FILE);
+  });
 });

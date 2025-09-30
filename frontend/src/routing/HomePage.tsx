@@ -28,7 +28,7 @@ const HomePage: React.FC = () => {
         onAnimationComplete={handleBoxLoad}
       >
         <MyNavbar />
-        <Chatbox title="Community Chat" height={520} maxMessages={500} />
+        <Chatbox title="Googooli Chat!" height={520} maxMessages={500} />
         <HeroSection />
         <TeamSection />
         <AboutSection />
