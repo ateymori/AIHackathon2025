@@ -176,26 +176,57 @@ summarizer = LlmAgent(
     output_key="summary",
 )
 
+# fact_checker = LlmAgent(
+#     name="FactChecker",
+#     model=GEMINI_2_FLASH,
+#     instruction="""You are a fact checker for group chat conversations. If something is not factually correct, you should say so. if it is correct or nothing wrong don't say anything.""",
+#     input_schema=None,
+#     output_key="fact_check",
+# )
+
 fact_checker = LlmAgent(
     name="FactChecker",
-    model=GEMINI_2_FLASH,
-    instruction="""You are a fact checker for group chat conversations. If something is not factually correct, you should say so. if it is correct or nothing wrong don't say anything.""",
-    input_schema=None,
+    model=GEMINI_2_FLASH, # Or whichever Gemini model you prefer
+    instruction="""You are a strict, automated fact checker for group chat conversations. Your task is to analyze the input text (a message or part of a conversation) and determine if it contains any factual inaccuracies.
+    
+    * **If you find a factual inaccuracy**, you must return a single, clear string explaining the error and providing the correct information. Do not include any other text, reasoning, or preamble (like 'Fact:').
+    * **If the input is factually correct, a question, an opinion, a command, or if you cannot determine the factuality**, you must return the exact string **"NO_ISSUE"**.
+    
+    You must only return one of these two forms of output. And tell the person who was wrong (including their name) what was wrong.
+    """,
+    # Assuming the input is the message text (or conversation segment) to be checked.
     output_key="fact_check",
 )
 
+# decider = LlmAgent(
+#     name="Decider",
+#     model=GEMINI_2_FLASH,
+#     instruction="""Given the conversation history, decide what the next action should be.
+#     You can either send a message or do nothing.
+#     If you want to send a message, return a string with the message.
+#     Just return the message, no other text.
+#     """,
+#     input_schema=None,
+#     output_key="decider",
+# )
+
 decider = LlmAgent(
     name="Decider",
-    model=GEMINI_2_FLASH,
-    instruction="""Given the conversation history, decide what the next action should be.
-    You can either send a message or do nothing.
-    If you want to send a message, return a string with the message.
-    Just return the message, no other text.
+    model=GEMINI_2_FLASH, # Or whichever Gemini model you prefer
+    instruction="""Given the complete conversation history provided as input, you must decide the next action.
+    Your only options are to **send a message** or to **do nothing**.
+    
+    * **If you decide to send a message**, you must return only a single string containing the message you want to send. Do not include any other text, reasoning, or formatting (like quotes or labels) in your output.
+    * **If you decide to do nothing** (i.e., the conversation doesn't require a response from you yet), you must return the exact string **"DO_NOTHING"**.
+    
+    Analyze the history carefully before making a decision. 
     """,
-    input_schema=None,
+    # Assuming your framework will pass the conversation history as the primary input.
+    # The 'input_schema' will depend on how your framework serializes the conversation.
+    # A common simple setup is to expect a single string.
+     # Assuming the conversation history is passed as a single string
     output_key="decider",
 )
-
 # --- Create the custom agent instance ---
 chatter_box_agent = StoryFlowAgent(
     name="ChatterBox",
@@ -313,6 +344,7 @@ async def call_agent_async(user: str, message: str):
 
     print(json.dumps(final_session.state, indent=2))
     print("-------------------------------\n")
+    return final_session.state['decider']
 
 
 if __name__ == "__main__":
