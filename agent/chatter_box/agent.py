@@ -48,7 +48,7 @@ class StoryFlowAgent(BaseAgent):
     # --- Field Declarations for Pydantic ---
     # Declare the agents passed during initialization as class attributes with type hints
     summarizer: LlmAgent
-
+    decider: LlmAgent
     # model_config allows setting Pydantic configurations if needed, e.g., arbitrary_types_allowed
     model_config = {"arbitrary_types_allowed": True}
 
@@ -56,6 +56,7 @@ class StoryFlowAgent(BaseAgent):
         self,
         name: str,
         summarizer: LlmAgent,
+        decider: LlmAgent,
     ):
         """
         Initializes the StoryFlowAgent.
@@ -72,12 +73,14 @@ class StoryFlowAgent(BaseAgent):
         # Define the sub_agents list for the framework
         sub_agents_list = [
             summarizer,
+            decider,
         ]
 
         # Pydantic will validate and assign them based on the class annotations.
         super().__init__(
             name=name,
             summarizer=summarizer,
+            decider=decider,
             sub_agents=sub_agents_list,  # Pass the sub_agents list directly
         )
 
@@ -91,11 +94,11 @@ class StoryFlowAgent(BaseAgent):
         """
         logger.info(f"[{self.name}] Starting story generation workflow.")
 
-        # 1. Initial Story Generation
-        logger.info(f"[{self.name}] Running StoryGenerator...")
+        # 1) Summarize conversation if prompted by upstream caller
+        logger.info(f"[{self.name}] Running Summarizer...")
         async for event in self.summarizer.run_async(ctx):
             logger.info(
-                f"[{self.name}] Event from StoryGenerator: {event.model_dump_json(indent=2, exclude_none=True)}"
+                f"[{self.name}] Event from Summarizer: {event.model_dump_json(indent=2, exclude_none=True)}"
             )
             yield event
             # Persist final summary into session state
@@ -114,6 +117,48 @@ class StoryFlowAgent(BaseAgent):
                 yield update_event
                 logger.info(f"[{self.name}] Updated session state 'summary' and reset counter.")
 
+        # 2) Decide next action based on the updated summary and conversation state
+        logger.info(f"[{self.name}] Running Decider...")
+        final_decision_text = ""
+        async for event in self.decider.run_async(ctx):
+            logger.info(
+                f"[{self.name}] Event from Decider: {event.model_dump_json(indent=2, exclude_none=True)}"
+            )
+            yield event
+            if event.is_final_response() and event.content and event.content.parts:
+                final_decision_text = (event.content.parts[0].text or "").strip()
+
+        # 3) Persist decision and optionally append assistant message
+        if final_decision_text is not None:
+            # Append decision to decisions list and optionally add to messages
+            decision_state_delta = {}
+            try:
+                # Safely extend existing decisions
+                existing_decisions = list(ctx.session.state.get("decisions", [])) if ctx.session and ctx.session.state else []
+            except Exception:
+                existing_decisions = []
+            new_decisions = (existing_decisions + [final_decision_text])[-MAX_MESSAGES:]
+            decision_state_delta["decisions"] = new_decisions
+
+            # If the decider produced a non-empty reply, add it as assistant message
+            if final_decision_text:
+                try:
+                    existing_messages = list(ctx.session.state.get("messages", [])) if ctx.session and ctx.session.state else []
+                except Exception:
+                    existing_messages = []
+                assistant_msg = {"user": "assistant@chatterbox", "msg": final_decision_text}
+                new_messages = (existing_messages + [assistant_msg])[-MAX_MESSAGES:]
+                decision_state_delta["messages"] = new_messages
+
+            decision_update_event = Event(
+                invocation_id=uuid.uuid4().hex,
+                author=self.name,
+                timestamp=time.time(),
+                actions=EventActions(state_delta=decision_state_delta)
+            )
+            yield decision_update_event
+            logger.info(f"[{self.name}] Persisted decision and updated messages accordingly.")
+
         logger.info(f"[{self.name}] Workflow finished.")
 
 
@@ -126,10 +171,23 @@ summarizer = LlmAgent(
     output_key="summary",
 )
 
+decider = LlmAgent(
+    name="Decider",
+    model=GEMINI_2_FLASH,
+    instruction="""Given the conversation history, decide what the next action should be.
+    You can either send a message or do nothing.
+    If you want to send a message, return a string with the message.
+    Just return the message, no other text.
+    """,
+    input_schema=None,
+    output_key="decision",
+)
+
 # --- Create the custom agent instance ---
 chatter_box_agent = StoryFlowAgent(
     name="ChatterBox",
     summarizer=summarizer,
+    decider=decider,
 )
 
 INITIAL_STATE = {
@@ -139,6 +197,7 @@ INITIAL_STATE = {
     ],
     "summary": "",
     "messages_since_last_summary": 0,
+    "decisions": ["", ""],
 }
 global_session_service = None
 global_runner = None
