@@ -18,10 +18,21 @@ Create a `.env` file with your Google AI Studio API key. You can copy from `.env
 cp chatter_box/.env.sample chatter_box/.env
 ```
 
-Then open `chatter_box/.env` and fill in your key or vertex ai api key:
+Then open `chatter_box/.env` and fill in your Google AI Studio API key:
 
 ```bash
 GOOGLE_API_KEY=your_gemini_api_key_here
+```
+
+Or alternatively use a Vertex AI:
+```bash
+gcloud auth application-default login
+```
+
+```bash
+GOOGLE_GENAI_USE_VERTEXAI=TRUE
+GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
+GOOGLE_CLOUD_LOCATION=LOCATION
 ```
 
 Run the agent.

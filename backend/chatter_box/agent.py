@@ -16,13 +16,7 @@ from pydantic import BaseModel, Field
 
 # --- Load environment and constants ---
 load_dotenv()
-
-# Prefer Google AI Studio API key path (not Vertex AI)
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-if not GOOGLE_API_KEY:
-    raise ValueError(
-        "GOOGLE_API_KEY is not set. Create a Google AI Studio API key and set it in your environment (.env)."
-    )
+check_environment_variables()
 
 # --- Constants ---
 APP_NAME = "story_app"
