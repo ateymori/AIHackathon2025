@@ -240,7 +240,7 @@ async def append_message_to_state(session, msg: dict):
 
 
 # --- Function to Interact with the Agent ---
-async def call_agent_async(user: str, message: str):
+async def call_agent_async(user: str, message: str) -> str:
     """
     Sends a new topic to the agent (overwriting the initial one if needed)
     and runs the workflow.
@@ -299,6 +299,8 @@ Please provide an updated summary of the entire conversation, incorporating the 
 
     print(json.dumps(final_session.state, indent=2))
     print("-------------------------------\n")
+    
+    return final_session.state["decisions"][-1] if final_session.state.get("decisions") else ""
 
 
 if __name__ == "__main__":
