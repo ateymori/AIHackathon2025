@@ -16,7 +16,7 @@ from google.adk.runners import Runner
 from google.adk.events import Event
 from pydantic import BaseModel, Field
 from google.adk.events import Event, EventActions
-from chatter_box.utils import check_environment_variables
+from utils import check_environment_variables
 
 # --- Load environment and constants ---
 load_dotenv()
