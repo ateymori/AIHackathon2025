@@ -31,3 +31,6 @@ dist-ssr
 # api keys
 key.json
 .env
+
+# chace
+__pycache__/
