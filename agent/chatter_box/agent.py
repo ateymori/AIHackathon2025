@@ -16,7 +16,7 @@ from google.adk.runners import Runner
 from google.adk.events import Event
 from pydantic import BaseModel, Field
 from google.adk.events import Event, EventActions
-from utils import check_environment_variables
+from chatter_box.utils import check_environment_variables
 
 # --- Load environment and constants ---
 load_dotenv()
@@ -101,18 +101,17 @@ class StoryFlowAgent(BaseAgent):
             # Persist final summary into session state
             if event.is_final_response() and event.content and event.content.parts:
                 final_text = event.content.parts[0].text
-                state_delta = {
-                    "summary": final_text,
-                    "messages_since_last_summary": 0
-                }
+                state_delta = {"summary": final_text, "messages_since_last_summary": 0}
                 update_event = Event(
                     invocation_id=uuid.uuid4().hex,
                     author=self.name,
                     timestamp=time.time(),
-                    actions=EventActions(state_delta=state_delta)
+                    actions=EventActions(state_delta=state_delta),
                 )
                 yield update_event
-                logger.info(f"[{self.name}] Updated session state 'summary' and reset counter.")
+                logger.info(
+                    f"[{self.name}] Updated session state 'summary' and reset counter."
+                )
 
         logger.info(f"[{self.name}] Workflow finished.")
 
@@ -166,16 +165,20 @@ async def append_message_to_state(session, msg: dict):
     # state_changes is a dict of key → new_value you want to inject
     state_changes = {
         "messages": (session.state["messages"] + [msg])[-MAX_MESSAGES:],
-        "messages_since_last_summary": session.state.get("messages_since_last_summary", 0) + 1,
+        "messages_since_last_summary": session.state.get(
+            "messages_since_last_summary", 0
+        )
+        + 1,
     }
     actions = EventActions(state_delta=state_changes)
     evt = Event(
         invocation_id=uuid.uuid4().hex,
         author="system",
         actions=actions,
-        timestamp=time.time()
+        timestamp=time.time(),
     )
     await global_session_service.append_event(session=session, event=evt)
+
 
 # --- Function to Interact with the Agent ---
 async def call_agent_async(user: str, message: str):

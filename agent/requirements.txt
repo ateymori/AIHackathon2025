@@ -1,3 +1,4 @@
 google-adk==1.15.1
 python-dotenv>=1.0.1,<2
 uuid==1.30
+aiohttp==3.12.15

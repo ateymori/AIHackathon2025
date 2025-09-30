@@ -35,8 +35,17 @@ GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
 GOOGLE_CLOUD_LOCATION=LOCATION
 ```
 
+
+Run the commands from the `agent` directory.
+
 Run the agent.
 
 ```bash
-adk web
+python -m chatter_box.agent
+```
+
+Run the server.
+
+```bash
+python -m chatter_box.server.server
 ```
