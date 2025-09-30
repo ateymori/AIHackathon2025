@@ -12,10 +12,16 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-Copy the `.env.example` file to `.env` and add the necessary environment variables.
+Create a `.env` file with your Google AI Studio API key. You can copy from `.env.sample`.
 
 ```bash
-cp .env.example .env
+cp chatter_box/.env.sample chatter_box/.env
+```
+
+Then open `chatter_box/.env` and fill in your key or vertex ai api key:
+
+```bash
+GOOGLE_API_KEY=your_gemini_api_key_here
 ```
 
 Run the agent.
