@@ -24,3 +24,10 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# environment
+.venv/
+
+# api keys
+key.json
+.env
