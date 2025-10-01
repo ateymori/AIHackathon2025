@@ -307,9 +307,13 @@ if __name__ == "__main__":
 
     async def main():
         await setup_session_and_runner()
-        await call_agent_async("Amin B.", "Playing tennis this weekend!")
-        await call_agent_async("Amin F.", "Lets do it!")
-        await call_agent_async("Amin Sh.", "We should picnix instead.")
-        await call_agent_async("Sanaz", "It's not a good idea.")
+        # await call_agent_async("Amin B.", "Playing tennis this weekend!")
+        # await call_agent_async("Amin F.", "Lets do it!")
+        # await call_agent_async("Amin Sh.", "We should picnix instead.")
+        # await call_agent_async("Sanaz", "It's not a good idea.")
+
+        await call_agent_async("Amin", "Guys do you want to play tennis this weekend?")
+        await call_agent_async("Yasaman", "Sure what time do you wanna go?")
+        await call_agent_async("Amin", "12 pm")
 
     asyncio.run(main())

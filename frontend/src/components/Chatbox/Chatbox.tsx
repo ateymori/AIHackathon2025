@@ -72,8 +72,8 @@ const Chatbox: React.FC<ChatboxProps> = ({ title = "Googooli Chat!", maxMessages
     const [touched, setTouched] = useState<{ name: boolean; email: boolean }>({ name: false, email: false });
 
     const listBg = useColorModeValue("gray.50", "gray.800");
-    const myBubbleBg = useColorModeValue("red.50", "red.900");
-    const otherBubbleBg = useColorModeValue("gray.200", "gray.700");
+    const myBubbleBg = useColorModeValue("red.50", "red.500");
+    const otherBubbleBg = useColorModeValue("gray.200", "green.500");
     const borderCol = useColorModeValue("gray.200", "gray.700");
 
     const endRef = useRef<HTMLDivElement | null>(null);
